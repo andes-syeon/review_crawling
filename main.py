@@ -55,6 +55,7 @@ def main():
         continue
     driver.quit()
     print("finish")
+    print("세은 git clone test~~~~~~~~!!!!!")
 
 
 def search(place_csv, addr_csv):
