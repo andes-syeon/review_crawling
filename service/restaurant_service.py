@@ -1,5 +1,5 @@
 import mysql_connector
-
+from datetime import datetime
 
 class Restaurant_service:
     conn = None
@@ -32,7 +32,7 @@ class Restaurant_service:
         try:
             sql = "insert into " \
                   "restaurant(`original_name`, `name`, `address`, `local`, `operation`, `number`, `infodttm`, `star`, `regdttm`)" \
-                  "values(%s, %s, %s, %s, %s, %s, %s, %s, DATE_FORMAT(now(), 'yyyyMMdd'))"
+                  "values(%s, %s, %s, %s, %s, %s, %s, %s, CURDATE())"
             val = restaurant.to_parentheses()
             result = self.conn.insert(sql, val)
             return result

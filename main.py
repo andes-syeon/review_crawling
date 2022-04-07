@@ -13,6 +13,7 @@ import model.restaurant
 import model.review_crawling
 import service.restaurant_service
 import service.review_crawling_service
+from datetime import datetime
 
 options = webdriver.ChromeOptions()
 options.add_argument('headless')
@@ -184,7 +185,16 @@ def extract_review(restaurant):
         print(operation_time)
     except(NoSuchElementException, ElementNotInteractableException, StaleElementReferenceException):
         print("no detailed operation_time information")
-
+    '''
+    try:
+        date_now = datetime.now()
+        date_now = date_now.date()
+        date_now = str(date_now)
+        restaurant.regdttm = date_now
+        print('등록일 : ', date_now)
+    except(NoSuchElementException, ElementNotInteractableException, StaleElementReferenceException):
+        print("no regdate")
+    '''
     # save restaurant
 
     try:
@@ -193,7 +203,7 @@ def extract_review(restaurant):
             id = restaurant_service.save(restaurant)
         restaurant.id = id
     except Exception as e:
-        print(e)
+        print(e, '1')
         return ret
     #TODO id=0으로 불러오는 가게들 별도로 기록
     if id == 0:
@@ -208,16 +218,31 @@ def extract_review(restaurant):
         for i, review in enumerate(review_lists):
             comment = review.select('.comment_info > .txt_comment > span')  # 리뷰
             # rating = review.select('.grade_star size_s > em')  # 별점
+            writername = review.select('.comment_info > .append_item > .link_user ')[0].text  # 작성자
+            writedt = review.select('.comment_info > .append_item > .time_write ')[0].text  # 작성일자
+            print('@@@@@@@@@@@@@@',writername, writedt)
             if len(comment) != 0 and len(comment[0].text) > 0:
                 review_crawling = model.review_crawling.Review_crawling(
                     content=comment[0].text,
+                    writer=writername,
+                    writedttm=writedt,
                     restaurant=restaurant
                 )
+                '''
+                review_crawling = model.review_crawling.Review_crawling(
+                    writer=writername[0].text,
+                    restaurant=restaurant
+                )
+                review_crawling = model.review_crawling.Review_crawling(
+                    writedttm = writedt[0].text,
+                    restaurant=restaurant
+                )
+                '''
                 print("review_crawling : ", review_crawling)
                 try:
                     review_crawling_service.save(review_crawling=review_crawling)
                 except Exception as e:
-                    print(e)
+                    print(e, '2')
                     continue
     else:
         print('no review in extract')

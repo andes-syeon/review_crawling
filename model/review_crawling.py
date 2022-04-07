@@ -9,7 +9,9 @@ class Review_crawling:
     writer = ""
     writedttm = ""
 
-    def __init__(self, content, restaurant):
+    def __init__(self, content, writer, writedttm, restaurant):
         self.content = content
+        self.writer = writer
+        self.writedttm = writedttm
         self.restaurant = restaurant
         return
