@@ -5,7 +5,7 @@ class Pymysql:
     conn = None
     host = "127.0.0.1"
     user = "root"
-    password = "1q2w3e4r!"
+    password = "0124"
     database = "test_db"
 
     def __init__(self):

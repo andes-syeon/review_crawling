@@ -8,6 +8,7 @@ from selenium.common.exceptions import NoSuchElementException, StaleElementRefer
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.by import By
 
 import model.restaurant
 import model.review_crawling
@@ -37,7 +38,7 @@ def main():
 
     driver.implicitly_wait(4)  # 렌더링 될 때까지 4초 대기
     driver.get('https://map.kakao.com/')
-    df = read('./data/shops_edit.csv')
+    df = read('./data/shops_test1.csv')
     pd.set_option('display.max_columns', None)
     df = df.loc[df['영업상태코드'] == 1]
     global store
@@ -49,7 +50,7 @@ def main():
     address = address.values
     address = address.tolist()
 
-    for i in range(len(store_list) - 1):
+    for i in range(len(store_list)):
         print('for문 인덱스버전 확인 ' + store_list[i] + address[i])
         search(store_list[i], address[i])
         continue
@@ -82,9 +83,17 @@ def search(place_csv, addr_csv):
             crawling(place_lists, restaurant)
         else:
             print('불일치')
-    except (NoSuchElementException, ElementNotInteractableException, IndexError, StaleElementReferenceException) as e:
+    except (NoSuchElementException, ElementNotInteractableException, IndexError) as e:
         print("---검색 결과 없음!---")
         print(e)
+    except StaleElementReferenceException:
+        #TODO PC 환경에 따른 Stale exception 처리해야 함
+        print("Stale element error 남 ~~~~~~~~~")
+        print(place_lists)
+        print(restaurant)
+        sleep(10)
+        crawling(place_lists, restaurant)
+
     sleep(2)
     search_area.clear()
 
@@ -93,68 +102,67 @@ def crawling(place_lists, restaurant):
     html = driver.page_source
     soup = BeautifulSoup(html, 'html.parser')
     while_flag = False  # 수정(false->False)
-    for i, place in enumerate(place_lists):
-        place_name = soup.select('.placelist > .PlaceItem > .head_item > .tit_name > .link_name ')[
-            0].text  # place name #수정IndexError: list index out of range오류나길래 [0]을 지워볼까? 했는데 지우면 text로 변환하는 문제가 생김;
+    try:
+        place_name = soup.select('.placelist > .PlaceItem > .head_item > .tit_name > .link_name ')[0].text
         restaurant.name = place_name
         place_star = soup.select('.placelist > .PlaceItem > .rating > .score > .num ')[0].text
         restaurant.star = place_star
         # place_address = soup.select('.info_item > .addr > p')[0].text  # place address(도로명주소.지번은 class='lot_number')
-        detail_page_xpath = driver.find_element(By.XPATH, '//*[@id="info.search.place.list"]/li[' + str(
-            i + 1) + ']/div[5]/div[4]/a[1]')  # 세은해결
+        detail_page_xpath = driver.find_element(By.XPATH, '//*[@id="info.search.place.list"]/li[1]/div[5]/div[4]/a[1]')  # 세은해결
         detail_page_xpath.send_keys(Keys.ENTER)
         driver.switch_to.window(driver.window_handles[-1])  # 상세정보 탭으로 변환 / 탭을 객체 리스트로 반환. 즉 맨 마지막 탭으로 이동하는 함수
         sleep(2)
         print('####', place_name, ' ', place_star)
-
+    except (NoSuchElementException, ElementNotInteractableException, StaleElementReferenceException, IndexError) as e:
+        print('&&&&&&&&&&&&&&&&&&&')
+        print(e)
         '''
+    try:
+        for i, place in enumerate(place_lists):
+            #문제ㅔㅔㅔㅔㅔㅔㅔㅔㅔㅔㅔㅔㅔㅔㅔㅔㅔㅔㅔㅔㅔㅔㅔㅔㅔㅔㅔㅔㅔㅔㅔ
+            place_name = soup.select('.placelist > .PlaceItem > .head_item > .tit_name > .link_name ')[0].text
+            restaurant.name = place_name
+            place_star = soup.select('.placelist > .PlaceItem > .rating > .score > .num ')[0].text
+            restaurant.star = place_star
+            # place_address = soup.select('.info_item > .addr > p')[0].text  # place address(도로명주소.지번은 class='lot_number')
+            print(i)
+            detail_page_xpath = driver.find_element(By.XPATH, '//*[@id="info.search.place.list"]/li[' + str(
+                i + 1) + ']/div[5]/div[4]/a[1]')  # 세은해결
+            detail_page_xpath.send_keys(Keys.ENTER)
+            driver.switch_to.window(driver.window_handles[-1])  # 상세정보 탭으로 변환 / 탭을 객체 리스트로 반환. 즉 맨 마지막 탭으로 이동하는 함수
+            sleep(2)
+            print('####', place_name, ' ', place_star)
+    except (NoSuchElementException, ElementNotInteractableException, StaleElementReferenceException, IndexError) as e:
+        print('&&&&&&&&&&&&&&&&&&&')
+        print(e)
+    '''
+    idx = 1
+    extract_review(restaurant)  # 리뷰 추출
+    # time.sleep(3)
+
+    idx = 2
+    while True:
         try:
-            place_update = driver.find_element(By.XPATH, '//*[@id="mArticle"]/div[1]/div[2]/span/span[1]').text
-            print('update: ', place_update)
-        except(NoSuchElementException, ElementNotInteractableException, StaleElementReferenceException):
-            print("no place_update information")
+            driver.find_element(By.XPATH, "//a[@data-page='" + str(idx) + "']").send_keys(Keys.ENTER)
+            sleep(3)
+            extract_review(restaurant)
+            if (idx % 5 == 0):
+                driver.find_element(By.LINK_TEXT, '다음').send_keys(Keys.ENTER)  # 5페이지가 넘는 경우 다음 버튼 누르기
+                idx += 1
+            else:
+                idx += 1
+                sleep(1)
+        except (NoSuchElementException, ElementNotInteractableException, StaleElementReferenceException, IndexError) as e:
+            # print(idx)
+            print("no review in crawling")
+            print(e)
+            #TODO list index out of range 걸려서 나머지 리뷰 크롤링 안 하고 다음 식당으로 넘어감
+            break
 
-        try:
-            place_call = driver.find_element(By.CLASS_NAME, 'txt_contact').text
-            print('대표번호: ', place_call)
-
-        except(NoSuchElementException, ElementNotInteractableException, StaleElementReferenceException):
-            print("no place_call information")
-
-        try:
-            detail_operation = driver.find_element(By.CLASS_NAME, 'btn_more')
-            detail_operation.send_keys(Keys.ENTER)
-            operation_time = driver.find_element(By.CLASS_NAME, 'inner_floor').text
-            print(operation_time)
-        except(NoSuchElementException, ElementNotInteractableException, StaleElementReferenceException):
-            print("no detailed operation_time information")
-        '''
-
-        idx = 1
-        extract_review(restaurant)  # 리뷰 추출
-        # time.sleep(3)
-
-        idx = 2
-        while True:
-            try:
-                driver.find_element(By.XPATH, "//a[@data-page='" + str(idx) + "']").send_keys(Keys.ENTER)
-                sleep(3)
-                extract_review(restaurant)
-                if (idx % 5 == 0):
-                    driver.find_element(By.LINK_TEXT, '다음').send_keys(Keys.ENTER)  # 5페이지가 넘는 경우 다음 버튼 누르기
-                    idx += 1
-                else:
-                    idx += 1
-                    sleep(1)
-            except (NoSuchElementException, ElementNotInteractableException):
-                # print(idx)
-                print("no review in crawling")
-                break
-
-        driver.close()
-        driver.switch_to.window(driver.window_handles[0])  # 검색 탭으로 전환
-        # Todo break why?
-        break
+    driver.close()
+    driver.switch_to.window(driver.window_handles[0])  # 검색 탭으로 전환
+    # Todo break why?
+    #break
 
 
 def extract_review(restaurant):
@@ -167,35 +175,35 @@ def extract_review(restaurant):
         place_update = driver.find_element(By.XPATH, '//*[@id="mArticle"]/div[1]/div[2]/span/span[1]').text
         restaurant.infodttm = place_update
         print('update: ', place_update)
-    except(NoSuchElementException, ElementNotInteractableException, StaleElementReferenceException):
+    except(NoSuchElementException, ElementNotInteractableException, StaleElementReferenceException, IndexError) as e:
         print("no place_update information")
+        print(e)
 
     try:
         place_call = driver.find_element(By.CLASS_NAME, 'txt_contact').text
         restaurant.number = place_call
         print('대표번호: ', place_call)
 
-    except(NoSuchElementException, ElementNotInteractableException, StaleElementReferenceException):
+    except(NoSuchElementException, ElementNotInteractableException, StaleElementReferenceException, IndexError) as e:
         print("no place_call information")
+        print(e)
 
     try:
         detail_operation = driver.find_element(By.CLASS_NAME, 'btn_more')
         detail_operation.send_keys(Keys.ENTER)
+        elem = driver.find_element(By.CLASS_NAME, 'location_detail.openhour_wrap.open_on').text
         operation_time = driver.find_element(By.CLASS_NAME, 'inner_floor').text
         restaurant.operation = operation_time.replace("\n", " ").replace("닫기", "")
-        print(operation_time)
-    except(NoSuchElementException, ElementNotInteractableException, StaleElementReferenceException):
-        print("no detailed operation_time information")
-    '''
-    try:
-        date_now = datetime.now()
-        date_now = date_now.date()
-        date_now = str(date_now)
-        restaurant.regdttm = date_now
-        print('등록일 : ', date_now)
-    except(NoSuchElementException, ElementNotInteractableException, StaleElementReferenceException):
-        print("no regdate")
-    '''
+    except (NoSuchElementException, ElementNotInteractableException, StaleElementReferenceException, IndexError) as e:
+        print(e)
+        try:
+            operation_time = driver.find_element(By.CLASS_NAME, 'location_detail.openhour_wrap').text
+            restaurant.operation = operation_time.replace("\n", " ").replace("닫기", "")
+            print(operation_time)
+        except(NoSuchElementException, ElementNotInteractableException, StaleElementReferenceException, IndexError) as e:
+            print("no detailed operation_time information")
+            print(e)
+
     # save restaurant
 
     try:
