@@ -3,10 +3,10 @@ import pymysql
 
 class Pymysql:
     conn = None
-    host = "127.0.0.1"
+    host = "alpha-project-db2.ctv6svlo10hb.us-east-1.rds.amazonaws.com"
     user = "root"
-    password = "0124"
-    database = "test_db"
+    password = "1q2w3e4r!"
+    database = "alpha"
 
     def __init__(self):
         return
