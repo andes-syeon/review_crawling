@@ -5,7 +5,7 @@ class Restaurant_service:
     conn = None
 
     def __init__(self):
-        self.conn = mysql_connector.Pymysql()
+        self.conn = mysql_connector.pymysql()
 
     def is_exist(self, restaurant):
         sql = "select count(1)" \

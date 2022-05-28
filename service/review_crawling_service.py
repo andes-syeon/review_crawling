@@ -5,7 +5,7 @@ class Review_crawling_service:
     conn = None
 
     def __init__(self):
-        self.conn = mysql_connector.Pymysql()
+        self.conn = mysql_connector.pymysql()
 
     def save(self, review_crawling):
         sql = "insert into " \

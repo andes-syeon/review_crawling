@@ -19,7 +19,7 @@ from datetime import datetime
 options = webdriver.ChromeOptions()
 options.add_argument('headless')
 options.add_argument('lang=ko_KR')
-chromedriver_path = "chromedriver"
+chromedriver_path = "chromedrive 3"
 # driver = webdriver.Chrome(os.path.join(os.getcwd(), chromedriver_path), options=options)
 # driver = webdriver.Chrome(executable_path='/Users/andes/PycharmProjects/pythonProject/chromedriver2')
 driver = webdriver.Chrome(ChromeDriverManager().install())
@@ -38,13 +38,12 @@ def read(file):
     df = pd.read_csv(file, encoding="cp949")
     return df
 
-
 def main():
     global driver, load_wb, review_num
 
     driver.implicitly_wait(4)  # 렌더링 될 때까지 4초 대기
     driver.get('https://map.kakao.com/')
-    df = read('./data/shops_test1.csv')
+    df = read('./data/1001건(1)예진_완료.csv')
     pd.set_option('display.max_columns', None)
     df = df.loc[df['영업상태코드'] == 1]
     global store
@@ -62,7 +61,7 @@ def main():
         continue
     driver.quit()
     print("finish")
-    print("세은 git clone test~~~~~~~~!!!!!")
+    #print("세은 git clone test~~~~~~~~!!!!!")
 
 
 def search(place_csv, addr_csv):
