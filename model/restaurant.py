@@ -12,6 +12,9 @@ class Restaurant:
     infodttm = ""
     star = 0.0
 
+    def __init__(self):
+        return
+
     def __init__(self, original_name,
                  name,
                  address,
