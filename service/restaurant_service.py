@@ -1,11 +1,19 @@
-import mysql_connector
-from datetime import datetime
+import pymysql
+
 
 class Restaurant_service:
     conn = None
+    host = "alpha-project-db2.ctv6svlo10hb.us-east-1.rds.amazonaws.com"
+    user = "root"
+    password = "1q2w3e4r!"
+    database = "alpha"
 
     def __init__(self):
-        self.conn = mysql_connector.pymysql()
+        self.conn = pymysql.connect(host=self.host,
+                                    user=self.user,
+                                    password=self.password,
+                                    database=self.database,
+                                    charset='utf8')
 
     def is_exist(self, restaurant):
         sql = "select count(1)" \
