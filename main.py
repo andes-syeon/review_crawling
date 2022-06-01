@@ -1,6 +1,7 @@
 from time import sleep
 
 import pandas as pd
+import pymysql
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.common.exceptions import ElementNotInteractableException
@@ -38,6 +39,7 @@ def read(file):
     df = pd.read_csv(file, encoding="cp949")
     return df
 
+
 def main():
     global driver, load_wb, review_num
 
@@ -61,7 +63,7 @@ def main():
         continue
     driver.quit()
     print("finish")
-    #print("세은 git clone test~~~~~~~~!!!!!")
+    # print("세은 git clone test~~~~~~~~!!!!!")
 
 
 def search(place_csv, addr_csv):
@@ -92,7 +94,7 @@ def search(place_csv, addr_csv):
         print("---검색 결과 없음!---")
         print(e)
     except StaleElementReferenceException:
-        #TODO PC 환경에 따른 Stale exception 처리해야 함
+        # TODO PC 환경에 따른 Stale exception 처리해야 함
         print("Stale element error 남 ~~~~~~~~~")
         print(place_lists)
         print(restaurant)
@@ -113,7 +115,8 @@ def crawling(place_lists, restaurant):
         place_star = soup.select('.placelist > .PlaceItem > .rating > .score > .num ')[0].text
         restaurant.star = place_star
         # place_address = soup.select('.info_item > .addr > p')[0].text  # place address(도로명주소.지번은 class='lot_number')
-        detail_page_xpath = driver.find_element(By.XPATH, '//*[@id="info.search.place.list"]/li[1]/div[5]/div[4]/a[1]')  # 세은해결
+        detail_page_xpath = driver.find_element(By.XPATH,
+                                                '//*[@id="info.search.place.list"]/li[1]/div[5]/div[4]/a[1]')  # 세은해결
         detail_page_xpath.send_keys(Keys.ENTER)
         driver.switch_to.window(driver.window_handles[-1])  # 상세정보 탭으로 변환 / 탭을 객체 리스트로 반환. 즉 맨 마지막 탭으로 이동하는 함수
         sleep(2)
@@ -157,17 +160,19 @@ def crawling(place_lists, restaurant):
             else:
                 idx += 1
                 sleep(1)
-        except (NoSuchElementException, ElementNotInteractableException, StaleElementReferenceException, IndexError) as e:
+        except (
+                NoSuchElementException, ElementNotInteractableException, StaleElementReferenceException,
+                IndexError) as e:
             # print(idx)
             print("no review in crawling")
             print(e)
-            #TODO list index out of range 걸려서 나머지 리뷰 크롤링 안 하고 다음 식당으로 넘어감
+            # TODO list index out of range 걸려서 나머지 리뷰 크롤링 안 하고 다음 식당으로 넘어감
             break
 
     driver.close()
     driver.switch_to.window(driver.window_handles[0])  # 검색 탭으로 전환
     # Todo break why?
-    #break
+    # break
 
 
 def extract_review(restaurant):
@@ -205,7 +210,9 @@ def extract_review(restaurant):
             operation_time = driver.find_element(By.CLASS_NAME, 'location_detail.openhour_wrap').text
             restaurant.operation = operation_time.replace("\n", " ").replace("닫기", "")
             print(operation_time)
-        except(NoSuchElementException, ElementNotInteractableException, StaleElementReferenceException, IndexError) as e:
+        except(
+                NoSuchElementException, ElementNotInteractableException, StaleElementReferenceException,
+                IndexError) as e:
             print("no detailed operation_time information")
             print(e)
 
@@ -219,7 +226,7 @@ def extract_review(restaurant):
     except Exception as e:
         print(e, '1')
         return ret
-    #TODO id=0으로 불러오는 가게들 별도로 기록
+    # TODO id=0으로 불러오는 가게들 별도로 기록
     if id == 0:
         print("fail restaurant : ", restaurant)
         return ret
@@ -234,7 +241,7 @@ def extract_review(restaurant):
             # rating = review.select('.grade_star size_s > em')  # 별점
             writername = review.select('.comment_info > .append_item > .link_user ')[0].text  # 작성자
             writedt = review.select('.comment_info > .append_item > .time_write ')[0].text  # 작성일자
-            print('@@@@@@@@@@@@@@',writername, writedt)
+            print('@@@@@@@@@@@@@@', writername, writedt)
             if len(comment) != 0 and len(comment[0].text) > 0:
                 review_crawling = model.review_crawling.Review_crawling(
                     content=comment[0].text,
@@ -250,6 +257,67 @@ def extract_review(restaurant):
                     continue
             # TODO 키워드 포함이면 category_review 테이블에 txt 삽입
             # TODO 일일이 반복문 돌아서 검사하면 너무 무거우려나?
+
+        # keyword
+        try:
+            for keyword in keyword1:
+                if keyword in review_crawling.content:
+                    start = review_crawling.content.find(keyword)
+                    end = start + len(keyword)
+                    txt = review_crawling.content[max(0, start - 10):min(len(review_crawling.content), end + 10)]
+                    category_review = model.category_review.Category_Review(
+                        category_id=1,
+                        restaurant_id=review_crawling.restaurant.id,
+                        txt=txt
+                    )
+                    insert_category_review(category_review)
+        except Exception as e:
+            print('keyword1 error ', e)
+            
+        try:
+            for keyword in keyword2:
+                if keyword in review_crawling.content:
+                    start = review_crawling.content.find(keyword)
+                    end = start + len(keyword)
+                    txt = review_crawling.content[max(0, start - 10):min(len(review_crawling.content), end + 10)]
+                    category_review = model.category_review.Category_Review(
+                        category_id=2,
+                        restaurant_id=review_crawling.restaurant.id,
+                        txt=txt
+                    )
+                    insert_category_review(category_review)
+        except Exception as e:
+            print('keyword2 error ', e)
+
+        try:
+            for keyword in keyword3:
+                if keyword in review_crawling.content:
+                    start = review_crawling.content.find(keyword)
+                    end = start + len(keyword)
+                    txt = review_crawling.content[max(0, start - 10):min(len(review_crawling.content), end + 10)]
+                    category_review = model.category_review.Category_Review(
+                        category_id=3,
+                        restaurant_id=review_crawling.restaurant.id,
+                        txt=txt
+                    )
+                    insert_category_review(category_review)
+        except Exception as e:
+            print('keyword3 error ', e)
+
+        try:
+            for keyword in keyword4:
+                if keyword in review_crawling.content:
+                    start = review_crawling.content.find(keyword)
+                    end = start + len(keyword)
+                    txt = review_crawling.content[max(0, start - 10):min(len(review_crawling.content), end + 10)]
+                    category_review = model.category_review.Category_Review(
+                        category_id=4,
+                        restaurant_id=review_crawling.restaurant.id,
+                        txt=txt
+                    )
+                    insert_category_review(category_review)
+        except Exception as e:
+            print('keyword4 error ', e)
 
 
 
