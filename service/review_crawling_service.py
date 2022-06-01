@@ -16,10 +16,24 @@ class Review_crawling_service:
                                     charset='utf8')
 
     def save(self, review_crawling):
+        self.conn = pymysql.connect(host='alpha-project-db2.ctv6svlo10hb.us-east-1.rds.amazonaws.com',
+                               user='root',
+                               password='1q2w3e4r!',
+                               db='alpha',
+                               charset='utf8')
+
         sql = "insert into " \
               "review_crawling(`restaurant_id`, `content`, `report`, `writer`, `writedttm`) " \
               "values(%s, %s, %s, %s, %s)"
         val = (review_crawling.restaurant.id, review_crawling.content, review_crawling.report, review_crawling.writer,
                review_crawling.writedttm)
-        result = self.conn.insert(sql, val)
-        return result
+
+        with self.conn:
+            with self.conn.cursor() as cur:
+                if val:
+                    cur.execute(sql, val)
+                else:
+                    cur.execute(sql)
+                self.conn.commit()
+                return cur.lastrowid
+        return None

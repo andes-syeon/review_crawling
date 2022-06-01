@@ -68,7 +68,16 @@ def main():
 
 def search(place_csv, addr_csv):
     global driver
-    restaurant = model.restaurant.Restaurant()
+    restaurant = model.restaurant.Restaurant(
+        original_name="",
+        name="",
+        address="",
+        local="",
+        operation="",
+        number="",
+        infodttm="",
+        star=0.0
+    )
     search_area = driver.find_element(By.XPATH, "//*[@id=\"search.keyword.query\"]")
     search_area.send_keys('마포 ' + place_csv)  # 검색어 입력
     restaurant.original_name = place_csv
@@ -245,8 +254,8 @@ def extract_review(restaurant):
             if len(comment) != 0 and len(comment[0].text) > 0:
                 review_crawling = model.review_crawling.Review_crawling(
                     content=comment[0].text,
-                    writer=writername[0].text,
-                    writedttm=writedt[0].text,
+                    writer=writername,
+                    writedttm=writedt,
                     restaurant=restaurant
                 )
                 print("review_crawling : ", review_crawling)
@@ -380,10 +389,10 @@ def insert_reastaurant(restaurant, regdttm):
 
 
 def read_review_from_db():
-    conn = pymysql.connect(host='localhost',
+    conn = pymysql.connect(host='alpha-project-db2.ctv6svlo10hb.us-east-1.rds.amazonaws.com',
                            user='root',
                            password='1q2w3e4r!',
-                           db='test_db',
+                           db='alpha',
                            charset='utf8')
 
     sql = "SELECT * FROM review_crawling"
@@ -489,4 +498,4 @@ def insert_category_review(category_review):
 
 
 if __name__ == "__main__":
-    insert_review_locat_data_to_DB()
+    main()
